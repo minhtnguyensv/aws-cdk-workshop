@@ -5,6 +5,7 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
+import { HitCounter } from './hitcounter';
 
 export class CdkWorkshopStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -16,13 +17,19 @@ export class CdkWorkshopStack extends Stack {
     // const topic = new sns.Topic(this, 'CdkWorkshopTopic');
     // topic.addSubscription(new subs.SqsSubscription(queue));
 
-    // define an AWS Lmbda resource
+    // define an AWS Lambda resource
     const hello = new lambda.Function(this, 'HelloHandler', {
       runtime: lambda.Runtime.NODEJS_14_X,
       code: lambda.Code.fromAsset('lambda'),
       handler: 'hello.handler',
     });
 
-    new apigw.LambdaRestApi(this, 'EndPoint', { handler: hello });
+    const helloWithCounter = new HitCounter(this, 'HelloHitCounter', {
+      downstream: hello,
+    });
+
+    new apigw.LambdaRestApi(this, 'EndPoint', {
+      handler: helloWithCounter.handler,
+    });
   }
 }
